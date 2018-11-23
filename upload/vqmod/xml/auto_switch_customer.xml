@@ -1,0 +1,383 @@
+<!-- Created by Alin - Website: http://goleo.vn //-->
+<modification>
+	<id><![CDATA[Auto Switch Customer Group]]></id>
+	<version><![CDATA[1.1.0]]></version>
+	<vqmver><![CDATA[2.1.3]]></vqmver>
+	<author><![CDATA[Alin]]></author>
+	<file name="catalog/controller/checkout/success.php">
+		<operation>
+			<search position="before"><![CDATA[$this->data['button_continue'] = $this->language->get('button_continue');]]></search>
+			<add><![CDATA[$this->load->model('account/success'); //for update customer group
+		//for update customer group
+		$customer_group_id = $this->model_account_success->getCustomer($this->customer->getId());
+		$customer_group_value = $this->model_account_success->getCustomerGroup($customer_group_id);
+		$reach_value = $customer_group_value['reach_value'];
+		$s_status = $customer_group_value['s_status'];
+		$reach_customer_group_id = $customer_group_value['reach_customer_group_id'];
+		$reach_order_status_id = $customer_group_value['reach_order_status_id'];
+		$custotal=0;
+		$values = $this->model_account_success->getOrderTotalValue($reach_order_status_id);
+		foreach ($values as $value) {
+			$custotal = $custotal + $value['total'];
+		}
+		if ($s_status) {
+			if ($custotal >= $reach_value) {
+				$this->model_account_success->editCustomer($this->customer->getId(), $reach_customer_group_id);
+			}
+		}
+		//end for
+            ]]></add>
+		</operation>
+	</file>
+	<file name="admin/view/template/sale/customer_group_form.tpl">
+		<operation>
+			<search position="after"><![CDATA[</table>]]></search>
+			<add><![CDATA[
+			<table class="form"><tbody>
+			<tr style="border-top: 1px solid #DDD;"><td colspan="6"><?php echo $entry_title; ?></td></tr>
+			<tr>
+                <td><?php echo $entry_reach_customer_group; ?></td>
+                <td><select name="reach_customer_group_id">
+                    <?php foreach ($customer_groups as $customer_group) { ?>
+                    <?php if ($customer_group['customer_group_id'] == $reach_customer_group_id) { ?>
+                    <option value="<?php echo $customer_group['customer_group_id']; ?>" selected="selected"><?php echo $customer_group['name']; ?></option>
+                    <?php } else { ?>
+                    <option value="<?php echo $customer_group['customer_group_id']; ?>"><?php echo $customer_group['name']; ?></option>
+                   <?php } ?>
+                   <?php } ?>
+                 </select></td>
+				  <td><?php echo $entry_reach_value; ?></td>
+				<td><input type="text" name="reach_value" value="<?php echo $reach_value; ?>" /></td>
+				
+				<td><?php echo $entry_reach_order_status; ?></td>
+				<td><select name="reach_order_status_id">
+                  <?php foreach ($order_statuss as $order_status) { ?>
+                   <?php if ($order_status['order_status_id'] == $reach_order_status_id) { ?>
+                    <option value="<?php echo $order_status['order_status_id']; ?>" selected="selected"><?php echo $order_status['name']; ?></option>
+                    <?php } else { ?>
+                    <option value="<?php echo $order_status['order_status_id']; ?>"><?php echo $order_status['name']; ?></option>
+                   <?php } ?>
+                  <?php } ?>
+                </select></td>
+           </tr> 
+		   <tr>
+              <td><?php echo $entry_admin_notify; ?></td>
+              <td><?php if ($admin_notify) { ?>
+                <input type="checkbox" name="admin_notify" value="1" checked="checked" />
+                <?php } else { ?>
+                <input type="checkbox" name="admin_notify" value="1" />
+                <?php } ?></td>
+			   <td><?php echo $entry_customer_notify; ?></td>
+              <td><?php if ($customer_notify) { ?>
+                <input type="checkbox" name="customer_notify" value="1" checked="checked" />
+                <?php } else { ?>
+                <input type="checkbox" name="customer_notify" value="1" />
+                <?php } ?></td>
+				 <td><?php echo $entry_s_status; ?></td>
+              <td><?php if ($s_status) { ?>
+                <input type="checkbox" name="s_status" value="1" checked="checked" />
+                <?php } else { ?>
+                <input type="checkbox" name="s_status" value="1" />
+                <?php } ?></td>
+            </tr></tbody></table>
+            ]]></add>
+		</operation>
+	</file>
+	<file name="admin/view/template/sale/customer_group_list.tpl">
+		<operation>
+			<search position="replace"><![CDATA[<td class="left"><?php echo $customer_group['name']; ?></td>]]></search>
+			<add><![CDATA[<td class="left"><?php echo $customer_group['name']; ?><span style="float:right"><?php echo $customer_group['reach_group']; ?></span></td>]]></add>
+		</operation>
+	</file>
+	<file name="admin/controller/sale/customer_group.php">
+		<operation>
+			<search position="before" index="1"><![CDATA[$this->getList();]]></search>
+			<add><![CDATA[
+			$this->model_sale_customer_group->checkColumn();
+			]]></add>
+		</operation>
+		<operation>
+			<search position="after"><![CDATA[$this->language->load('sale/customer_group');]]></search>
+			<add><![CDATA[
+			$this->language->load('sale/customer_switch');
+			]]></add>
+		</operation>
+		<operation>
+			<search position="after"><![CDATA[protected function getForm() {]]></search>
+			<add><![CDATA[
+		$this->data['entry_reach_value'] = $this->language->get('entry_reach_value');
+		$this->data['entry_reach_customer_group'] = $this->language->get('entry_reach_customer_group');
+		$this->data['entry_reach_order_status'] = $this->language->get('entry_reach_order_status');
+		$this->data['entry_admin_notify'] = $this->language->get('entry_admin_notify');
+		$this->data['entry_customer_notify'] = $this->language->get('entry_customer_notify');
+		$this->data['entry_title'] = $this->language->get('entry_title');
+		$this->data['entry_s_status'] = $this->language->get('entry_s_status');
+			]]></add>
+		</operation>
+		<operation>
+			<search position="before"><![CDATA[$this->template = 'sale/customer_group_form.tpl';]]></search>
+			<add><![CDATA[
+		//for switch customer group
+		if (isset($this->request->post['reach_value'])) {
+			$this->data['reach_value'] = $this->request->post['reach_value'];
+		} elseif (isset($customer_group_info)) {
+			$this->data['reach_value'] = $customer_group_info['reach_value'];
+		} else {
+			$this->data['reach_value'] = '';
+		}
+		
+		if (isset($this->request->post['reach_customer_group_id'])) {
+			$this->data['reach_customer_group_id'] = $this->request->post['reach_customer_group_id'];
+		} elseif (isset($customer_group_info)) {
+			$this->data['reach_customer_group_id'] = $customer_group_info['reach_customer_group_id'];
+		} else {
+			$this->data['reach_customer_group_id'] = '';
+		}
+		
+		if (isset($this->request->post['reach_order_status_id'])) {
+			$this->data['reach_order_status_id'] = $this->request->post['reach_order_status_id'];
+		} elseif (isset($customer_group_info)) {
+			$this->data['reach_order_status_id'] = $customer_group_info['reach_order_status_id'];
+		} else {
+			$this->data['reach_order_status_id'] = '';
+		}
+		if (isset($this->request->post['admin_notify'])) {
+			$this->data['admin_notify'] = $this->request->post['admin_notify'];
+		} elseif (!empty($customer_group_info)) {
+			$this->data['admin_notify'] = $customer_group_info['admin_notify'];
+		} else {
+			$this->data['admin_notify'] = 0;
+		}
+		if (isset($this->request->post['customer_notify'])) {
+			$this->data['customer_notify'] = $this->request->post['customer_notify'];
+		} elseif (!empty($customer_group_info)) {
+			$this->data['customer_notify'] = $customer_group_info['customer_notify'];
+		} else {
+			$this->data['customer_notify'] = 0;
+		}
+		
+		if (isset($this->request->post['s_status'])) {
+			$this->data['s_status'] = $this->request->post['s_status'];
+		} elseif (!empty($customer_group_info)) {
+			$this->data['s_status'] = $customer_group_info['s_status'];
+		} else {
+			$this->data['s_status'] = 0;
+		}
+		
+		$this->data['order_statuss'] = $this->model_sale_customer_group->getOrderStatus();
+					
+		$this->data['customer_groups'] = $this->model_sale_customer_group->getCustomerGroups();			]]></add>
+		</operation>
+		<operation>
+			<search position="before"><![CDATA[$this->data['customer_groups'][] = array(]]></search>
+			<add><![CDATA[
+		//for auto switch
+			$value = $this->model_sale_customer_group->getCustomerGroup($result['reach_customer_group_id']);
+			if (isset($value['name'])) {
+				$reach_name = $value['name'];
+			} else {
+				$reach_name = '';
+			}
+			
+			//End for auto switch
+			]]></add>
+		</operation>
+		<operation>
+			<search position="after"><![CDATA[$this->data['customer_groups'][] = array(]]></search>
+			<add><![CDATA[
+		//for auto switch
+				'reach_value' => $result['reach_value'],
+				'reach_group' => $result['reach_customer_group_id']?sprintf($this->language->get('text_group_note'), $reach_name,$this->model_sale_customer_group->getOrderStatusbyId($result['reach_order_status_id']), $result['reach_value'], $result['s_status']?$this->language->get('text_enabled'):$this->language->get('text_disabled')):'',
+				
+				//end for
+			]]></add>
+		</operation>
+	</file>
+	<file name="admin/model/sale/customer_group.php">
+		<operation>
+			<search position="replace"><![CDATA[sort_order = '" . (int)$data['sort_order'] . "']]></search>
+			<add><![CDATA[sort_order = '" . (int)$data['sort_order'] . "', reach_value = '" . (float)($data['reach_value']) . "', reach_customer_group_id = '" . (int)($data['reach_customer_group_id']) . "', reach_order_status_id = '" . (int)($data['reach_order_status_id']) . "', admin_notify = '" . (isset($data['admin_notify']) ? (int)$data['admin_notify'] : 0) . "', customer_notify = '" . (isset($data['customer_notify']) ? (int)$data['customer_notify'] : 0) . "', s_status = '" . (isset($data['s_status']) ? (int)$data['s_status'] : 0) . "']]></add>
+		</operation>
+		<operation>
+			<search position="before" offset="1"><![CDATA[?>]]></search>
+			<add><![CDATA[//for auto switch customer group
+	public function getOrderStatus() {
+		$query = $this->db->query("SELECT *  FROM " . DB_PREFIX . "order_status WHERE language_id = '" . (int)$this->config->get('config_language_id') . "'");
+		
+		return $query->rows;
+	}
+	public function getOrderStatusbyId($order_status_id) {
+		$query = $this->db->query("SELECT name  FROM " . DB_PREFIX . "order_status WHERE order_status_id = '" . (int)$order_status_id . "' AND language_id = '" . (int)$this->config->get('config_language_id') . "'");
+		
+		return $query->row['name'];
+	}
+	]]></add>
+		</operation>
+		<operation>
+			<search position="before" offset="1"><![CDATA[?>]]></search>
+			<add><![CDATA[public function checkColumn() {
+			$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "customer_group");					
+			if (!isset($query->row['reach_value'])) {
+				$this->db->query("ALTER TABLE " . DB_PREFIX . "customer_group ADD `reach_value` DECIMAL(15,4) NOT NULL DEFAULT '0.0000'");
+			}
+			if (!isset($query->row['reach_customer_group_id'])) {
+				$this->db->query("ALTER TABLE " . DB_PREFIX . "customer_group ADD `reach_customer_group_id` int(11) NOT NULL");
+			}
+			if (!isset($query->row['reach_order_status_id'])) {
+				$this->db->query("ALTER TABLE " . DB_PREFIX . "customer_group ADD `reach_order_status_id` int(11) NOT NULL");
+			}
+			if (!isset($query->row['admin_notify'])) {
+				$this->db->query("ALTER TABLE " . DB_PREFIX . "customer_group ADD `admin_notify` int(1) NOT NULL");
+			}
+			if (!isset($query->row['customer_notify'])) {
+				$this->db->query("ALTER TABLE " . DB_PREFIX . "customer_group ADD `customer_notify` int(1) NOT NULL");
+			}
+			
+			if (!isset($query->row['s_status'])) {
+				$this->db->query("ALTER TABLE " . DB_PREFIX . "customer_group ADD `s_status` int(1) NOT NULL");
+			}
+			}]]></add>
+		</operation>
+	</file>
+	
+	<file name="admin/model/sale/order.php">
+		<operation>
+			<search position="before"><![CDATA[public function getTotalEmailsByProductsOrdered($products) {]]></search>
+			<add><![CDATA[public function editCustomerGroup($order_id) {
+			
+		$order_info = $this->getOrder($order_id);
+		
+		if ($order_info) {
+		
+			$customer_id = $order_info['customer_id'];
+			
+			$customer_info = $this->getCustomer($customer_id);
+			
+			$group_info = $this->getCustomerGroup($customer_info['customer_group_id']);
+			
+			if ($group_info && $group_info['s_status']) {
+				$order_status_id = $group_info['reach_order_status_id'];
+				$order_total = $this->getCustomerOrderTotalValue($customer_id,$order_status_id);
+				
+				if ($order_total>=$group_info['reach_value']) {
+					$new_customer_group_id = $group_info['reach_customer_group_id'];
+					
+					if ($new_customer_group_id != $customer_info['customer_group_id']) {
+					
+						$this->db->query("UPDATE " . DB_PREFIX . "customer SET customer_group_id = '" . (int)$new_customer_group_id . "' WHERE customer_id = '" . (int)$customer_id . "'");
+					
+						//send notify email
+						
+						$group_name = $this->db->query("SELECT `name` FROM " . DB_PREFIX . "customer_group_description WHERE customer_group_id = '" . (int)$new_customer_group_id . "' AND language_id = '" . (int)$order_info['language_id'] . "'");
+						
+						$language = new Language($order_info['language_directory']);
+						$language->load($order_info['language_filename']);
+						$language->load('mail/customer_switch');
+							
+						$mail = new Mail();
+						$mail->protocol = $this->config->get('config_mail_protocol');
+						$mail->parameter = $this->config->get('config_mail_parameter');
+						$mail->hostname = $this->config->get('config_smtp_host');
+						$mail->username = $this->config->get('config_smtp_username');
+						$mail->password = $this->config->get('config_smtp_password');
+						$mail->port = $this->config->get('config_smtp_port');
+						$mail->timeout = $this->config->get('config_smtp_timeout');	
+						$mail->setFrom($this->config->get('config_email'));
+						$mail->setSender($this->config->get('config_name'));
+						
+						if ($group_info['customer_notify']) {
+						
+							$subject = sprintf($language->get('text_subject'), $this->config->get('config_name'));
+						
+							$message = sprintf($language->get('text_welcome'), $this->config->get('config_name')) . "\n\n";
+					
+							$message .= sprintf($language->get('text_login'), $group_name->row['name']) . "\n";
+						
+							$message .= $this->url->link('account/login', '', 'SSL') . "\n\n";
+							$message .= $language->get('text_services') . "\n\n";
+							$message .= $language->get('text_thanks') . "\n";
+							$message .= $this->config->get('config_name');
+							$mail->setSubject(html_entity_decode($subject, ENT_QUOTES, 'UTF-8'));
+							$mail->setText(html_entity_decode($message, ENT_QUOTES, 'UTF-8'));
+							$mail->setTo($customer_info['email']);
+							$mail->send();
+						}
+						if ($group_info['admin_notify']) {
+						// Send to main admin email if new account email is enabled
+							$subject = sprintf($language->get('text_admin_subject'), $this->config->get('config_name'), $group_name->row['name']);
+						
+							$message = sprintf($language->get('text_admin_content'), $customer_info['email'], $group_name->row['name']) . "\n\n";
+					
+							$mail->setSubject(html_entity_decode($subject, ENT_QUOTES, 'UTF-8'));
+							$mail->setText(html_entity_decode($message, ENT_QUOTES, 'UTF-8'));
+							$mail->setTo($this->config->get('config_email'));
+							$mail->send();
+							
+							// Send to additional alert emails if new account email is enabled
+							$emails = explode(',', $this->config->get('config_alert_emails'));
+							
+							foreach ($emails as $email) {
+								if (strlen($email) > 0 && preg_match('/^[^\@]+@.*\.[a-z]{2,6}$/i', $email)) {
+									$mail->setTo($email);
+									$mail->send();
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	public function getCustomerOrderTotalValue($customer_id, $order_status_id) {
+		$query = $this->db->query("SELECT SUM(total) AS total FROM `" . DB_PREFIX . "order` WHERE customer_id = '" . (int)$customer_id . "' AND order_status_id = '" . (int)$order_status_id . "'");
+	
+		return $query->row['total']; 
+	}
+	
+	public function getCustomerGroup($customer_group_id) {
+		$query = $this->db->query("SELECT DISTINCT * FROM " . DB_PREFIX . "customer_group WHERE customer_group_id = '" . (int)$customer_group_id . "'");
+		if ($query->num_rows) {
+			if (!isset($query->row['reach_value']) || !isset($query->row['reach_customer_group_id']) || !isset($query->row['reach_order_status_id'])) {
+				if (!isset($query->row['reach_value'])) {
+					$this->db->query("ALTER TABLE " . DB_PREFIX . "customer_group ADD `reach_value` DECIMAL( 15, 4 ) NOT NULL DEFAULT '0.0000' AFTER name");
+				}
+				if (!isset($query->row['reach_customer_group_id'])) {
+					$this->db->query("ALTER TABLE " . DB_PREFIX . "customer_group ADD `reach_customer_group_id` int(11) NOT NULL AFTER reach_value");
+				}
+				if (!isset($query->row['reach_order_status_id'])) {
+					$this->db->query("ALTER TABLE " . DB_PREFIX . "customer_group ADD `reach_order_status_id` int(11) NOT NULL AFTER reach_customer_group_id");
+				}
+			} else {
+				return array(
+					'reach_value' => $query->row['reach_value'],
+					'reach_customer_group_id' => $query->row['reach_customer_group_id'],
+					'reach_order_status_id' => $query->row['reach_order_status_id'],
+					's_status' => $query->row['s_status'],
+					'admin_notify' => $query->row['admin_notify'],
+					'customer_notify' => $query->row['customer_notify'],
+				);
+			}
+		} else {
+			return array();
+		}
+	}
+	
+	public function getCustomer($customer_id) {
+		$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "customer WHERE customer_id = '" . (int)$customer_id . "'");
+		
+		return $query->row;
+	}]]></add>
+		</operation>
+		<operation>
+			<search position="after"><![CDATA[this->db->query("UPDATE `" . DB_PREFIX . "order` SET total]]></search>
+			<add><![CDATA[//Switch customer group
+			$this->editCustomerGroup($order_id);]]></add>
+		</operation>
+		<operation>
+			<search position="after"><![CDATA[$this->model_payment_amazon_checkout->orderStatusChange($order_id, $data);]]></search>
+			<add><![CDATA[//Switch customer group
+			$this->editCustomerGroup($order_id);]]></add>
+		</operation>
+	</file>
+</modification>
