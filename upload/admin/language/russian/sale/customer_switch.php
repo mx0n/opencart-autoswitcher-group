@@ -1,6 +1,6 @@
 <?php
 //Added Entry
-$_['entry_title'] = '<b>Перевод группы клиентов </b>';
+$_['entry_title'] = '<b>Перевод в другую группу </b>';
 $_['entry_reach_customer_group'] = 'Перевод клиента в группу:';
 $_['entry_reach_value']       = 'Когда оборот достигнет:';
 $_['entry_reach_order_status']       = 'Для заказов со статусом:';
